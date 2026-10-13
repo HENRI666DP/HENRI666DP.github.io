@@ -634,10 +634,31 @@ function bubble(text,who){const el=document.createElement('div');el.className='h
 function words(q){return normalize(q).split(' ').filter(x=>x.length>3&&!stop.has(x))}
 function bestTopic(q){const n=normalize(q);let best=null,score=0;for(const t of topics){let v=0;for(const k of t.keys){const kn=normalize(k);if(n.includes(kn))v+=kn.includes(' ')?9:5;else if(kn.includes(' ')&&kn.split(' ').every(w=>n.includes(w)))v+=6;}if(v>score){best=t;score=v}}return score>=5?best:null}
 function searchPage(q){const tokens=words(q);if(!tokens.length)return null;let best=null,score=0;for(const entry of corpus){const sentences=entry.text.match(/[^.!?]{18,240}[.!?]?/g)||[];for(const sentence of sentences){const n=normalize(sentence);const hits=tokens.filter(t=>n.includes(t));const val=hits.length*3+(hits.length===tokens.length?3:0);if(hits.length>=Math.min(2,tokens.length)&&val>score){score=val;best={answer:sentence.trim(),target:entry.id}}}}return score>=6?best:null}
-function respond(q){q=q.trim().slice(0,240);if(!q)return;bubble(q,'user');const n=normalize(q);
-if(/^(hola|buenas|buenos dias|buenas tardes|hey|saludos)/.test(n)){bubble('¡Hola! Soy el guía del portafolio del Dr. Henri del Carmen Damas Paz. Pregúntame por sus estudios, experiencia, proyectos, herramientas, constancias o servicios.','bot');return}
-const match=bestTopic(q)||searchPage(q);if(match){bubble(match.answer,'bot');const section=document.getElementById(match.target);if(section){const a=document.createElement('a');a.href='#'+match.target;a.textContent='↗ Ver información en la página';a.className='hg-source-link';a.addEventListener('click',()=>{toggle(false)});messages.append(a)}messages.scrollTop=messages.scrollHeight;return}
-bubble('No encuentro una respuesta verificable a esa pregunta en la información publicada. Puedes preguntarme sobre formación, trabajo actual, trayectoria, proyectos Arduino, herramientas, constancias o contacto. Para otros detalles, consulta directamente al docente.','bot')}
+const AI_ENDPOINT='https://REEMPLAZAR-CON-TU-WORKER.workers.dev/';
+const history=[];
+async function respond(q){
+ q=q.trim().slice(0,500);if(!q)return;
+ bubble(q,'user');
+ const loading=document.createElement('div');loading.className='hg-bubble bot';loading.textContent='✦ Pensando...';messages.append(loading);messages.scrollTop=messages.scrollHeight;
+ try{
+  if(AI_ENDPOINT.includes('REEMPLAZAR-CON-TU-WORKER'))throw new Error('pendiente');
+  const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),25000);
+  let response;
+  try{response=await fetch(AI_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:q,history:history.slice(-6)}),signal:controller.signal});}
+  finally{clearTimeout(timeout)}
+  if(!response.ok)throw new Error('Servicio no disponible');
+  const data=await response.json();if(!data.answer||typeof data.answer!=='string')throw new Error('Respuesta inválida');
+  loading.textContent=data.answer.slice(0,2400);
+  history.push({role:'user',content:q},{role:'assistant',content:data.answer.slice(0,1800)});
+  if(history.length>12)history.splice(0,history.length-12);
+ }catch(error){
+  const match=bestTopic(q)||searchPage(q);
+  loading.textContent=match?match.answer:'Todavía no tengo una respuesta confirmada para esa pregunta. Puedes consultar la información del portafolio o contactar directamente al Dr. Henri.';
+  if(match){const section=document.getElementById(match.target);if(section){const a=document.createElement('a');a.href='#'+match.target;a.textContent='↗ Ver información en la página';a.className='hg-source-link';a.addEventListener('click',()=>toggle(false));messages.append(a)}}
+  if(AI_ENDPOINT.includes('REEMPLAZAR-CON-TU-WORKER')){const hint=document.createElement('small');hint.textContent='Modo local: conecta Cloudflare para activar la IA generativa.';hint.style.opacity='.7';messages.append(hint)}
+ }
+ messages.scrollTop=messages.scrollHeight;
+}
 function toggle(open){root.classList.toggle('hg-open',open);windowEl.setAttribute('aria-hidden',String(!open));trigger.setAttribute('aria-expanded',String(open));if(open)input.focus();else trigger.focus()}
 trigger.addEventListener('click',()=>toggle(!root.classList.contains('hg-open')));close.addEventListener('click',()=>toggle(false));document.addEventListener('keydown',e=>{if(e.key==='Escape'&&root.classList.contains('hg-open'))toggle(false)});
 form.addEventListener('submit',e=>{e.preventDefault();respond(input.value);input.value=''});root.querySelectorAll('[data-q]').forEach(b=>b.addEventListener('click',()=>respond(b.dataset.q)));
