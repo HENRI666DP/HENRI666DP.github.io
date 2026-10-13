@@ -14,3 +14,5 @@ Cloudflare Workers AI tiene una asignación gratuita diaria con límites; si se 
 
 REVISION: El frontend envia historial; el Worker de este ZIP admite historial y history.
 El Worker publicado en Cloudflare no se modifica al subir el sitio a GitHub Pages.
+
+ACTUALIZACION 2026-10-13: El Worker ahora permite hasta 1400 tokens de salida y 2400 caracteres por mensaje de historial. Para aplicar estos cambios debes publicar worker.js en Cloudflare; cambiar solo index.html NO actualiza el modelo. La cuota gratuita y limites de modelo pueden variar. Verifica el uso en tu cuenta.
