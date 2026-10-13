@@ -11,3 +11,6 @@ GUÍA DE INSTALACIÓN — HENRI IA REAL (CLOUDFLARE GRATIS)
 ATENCIÓN: el asistente solo está conectado a IA real después de configurar y publicar el Worker. En vista previa local responde con el motor anterior. El Worker acepta peticiones desde el dominio público de tu página, no desde file://. No es una protección contra uso automatizado: para alto tráfico añade Turnstile, controles de cuota/rate limiting y supervisión de consumo.
 
 Cloudflare Workers AI tiene una asignación gratuita diaria con límites; si se agota, el asistente utiliza las respuestas locales de respaldo. Revisa los límites y los términos actuales en https://developers.cloudflare.com/workers-ai/platform/pricing/ .
+
+REVISION: El frontend envia historial; el Worker de este ZIP admite historial y history.
+El Worker publicado en Cloudflare no se modifica al subir el sitio a GitHub Pages.
