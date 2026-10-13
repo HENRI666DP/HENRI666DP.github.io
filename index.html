@@ -568,6 +568,65 @@ header .nav-pro-profile{background:linear-gradient(135deg,rgba(233,194,122,.18),
 @media(max-width:1350px){header .nav-pro{grid-template-columns:1fr auto!important;gap:12px 20px!important;padding:15px 0!important}header .nav-pro-brand{grid-column:1!important;white-space:normal!important;font-size:clamp(36px,4vw,50px)!important}header .nav-pro-profile{grid-column:2!important;grid-row:1!important}header .nav-pro-links{grid-column:1/-1!important;grid-row:2!important;justify-content:center!important;gap:clamp(15px,2.5vw,36px)!important}header .nav-pro-links a{font-size:13px!important}}
 @media(max-width:650px){header .nav-pro{width:calc(100% - 26px)!important;grid-template-columns:minmax(0,1fr) auto!important;min-height:0!important}header .nav-pro-brand{font-size:clamp(29px,6.1vw,41px)!important;line-height:1.1!important}header .nav-pro-profile{font-size:11px!important;padding:10px!important}header .nav-pro-links{justify-content:flex-start!important;overflow-x:auto!important;gap:19px!important}header .nav-pro-links a{font-size:12px!important}}
 @media(prefers-reduced-motion:reduce){header .nav-pro-brand .signature-dr,header .nav-pro-brand .signature-paz{animation:none!important}}
+</style><style id="responsive-final-2026">
+/* Corrección responsive final: celulares, tabletas, PC y TV */
+*,*::before,*::after{box-sizing:border-box}
+html,body{width:100%;max-width:100%;margin:0;overflow-x:clip}
+img,video,iframe,svg{max-width:100%;height:auto}
+video{display:block}
+.wrap{width:min(100% - 40px,1320px)!important;max-width:1320px!important;margin-inline:auto!important}
+section,main,header,footer{max-width:100%;min-width:0}
+main section .wrap,main section article,main section .card{min-width:0}
+:is(h1,h2,h3,p,li,a,strong){overflow-wrap:break-word}
+/* Cabecera: grid estable; evita que el menú salte una sola opción */
+body>header .nav-pro{display:grid!important;width:min(100% - 44px,1560px)!important;max-width:1560px!important;
+ grid-template-columns:minmax(0,1.18fr) minmax(0,1fr) auto!important;align-items:center!important;gap:clamp(12px,1.7vw,30px)!important;min-height:96px!important}
+body>header .nav-pro-brand{min-width:0!important;max-width:100%!important;font-size:clamp(27px,2.45vw,47px)!important;line-height:1.12!important;white-space:normal!important}
+body>header .nav-pro-links{display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:center!important;gap:9px clamp(10px,1.1vw,22px)!important;min-width:0!important}
+body>header .nav-pro-links a{font-size:clamp(11px,.78vw,14px)!important;white-space:nowrap!important}
+body>header .nav-pro-profile{white-space:nowrap!important;justify-self:end!important}
+/* Cuadrículas y componentes de contenido */
+.logo-grid,.academic-grid,.certificate-grid,.galeria-grid,.exp-grid,.grid{max-width:100%;min-width:0}
+.logo-card,.academic-card,.certificate-card,.galeria-item,.project-card,.premium-experience{min-width:0}
+@media(min-width:1800px){.wrap{width:min(100% - 100px,1540px)!important;max-width:1540px!important}body>header .nav-pro{width:min(100% - 100px,1760px)!important;max-width:1760px!important}body>header .nav-pro-brand{font-size:clamp(40px,2.4vw,55px)!important}}
+@media(max-width:1280px){
+ body>header .nav-pro{grid-template-columns:minmax(0,1fr) auto!important;gap:8px 16px!important;padding:14px 0!important}
+ body>header .nav-pro-brand{grid-column:1!important;grid-row:1!important;font-size:clamp(28px,3.4vw,43px)!important}
+ body>header .nav-pro-profile{grid-column:2!important;grid-row:1!important}
+ body>header .nav-pro-links{grid-column:1/-1!important;grid-row:2!important;justify-content:center!important;gap:12px clamp(12px,2.4vw,27px)!important}
+ body>header .nav-pro-links a{font-size:13px!important}
+}
+@media(max-width:900px){
+ .wrap{width:calc(100% - 36px)!important}
+ .two,.business-layout,.perfil-shell{grid-template-columns:1fr!important}
+ .academic-grid,.galeria-grid,.exp-grid,.certificate-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ .logo-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+ .grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ .premium-experience{grid-template-columns:1fr!important}
+ .h-tech-hero{min-height:0!important}
+ .h-tech-hero .h-hero-visual{max-width:min(78vw,450px)!important;margin-inline:auto!important}
+}
+@media(max-width:600px){
+ .wrap{width:calc(100% - 28px)!important}
+ body>header .nav-pro{width:calc(100% - 24px)!important;grid-template-columns:minmax(0,1fr)!important;gap:10px!important;padding:13px 0 10px!important}
+ body>header .nav-pro-brand{grid-column:1!important;grid-row:1!important;font-size:clamp(29px,7.5vw,42px)!important;text-align:center!important;line-height:1.04!important}
+ body>header .nav-pro-profile{grid-column:1!important;grid-row:3!important;justify-self:center!important;font-size:12px!important;padding:9px 20px!important}
+ body>header .nav-pro-links{grid-column:1!important;grid-row:2!important;display:flex!important;justify-content:center!important;flex-wrap:wrap!important;overflow:visible!important;gap:4px 15px!important;padding:2px 0!important}
+ body>header .nav-pro-links a{font-size:12px!important;padding:7px 2px!important}
+ .academic-grid,.galeria-grid,.exp-grid,.certificate-grid,.grid,.business-layout,.two,.perfil-metrics{grid-template-columns:1fr!important}
+ .logo-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important}
+ .logo-card{padding:16px 10px!important}
+ .premium-experience{padding:22px 18px!important}
+ .h-tech-hero{display:flex!important;flex-direction:column!important;gap:18px!important;padding:28px 14px!important}
+ .h-tech-hero .h-hero-copy,.h-tech-hero .h-hero-visual{width:100%!important;max-width:100%!important}
+ .h-tech-hero h1{font-size:clamp(39px,11vw,65px)!important;line-height:1.05!important}
+ .h-tech-hero .h-hero-visual{max-width:330px!important}
+ .h-hero-actions{display:flex!important;flex-wrap:wrap!important}
+ .academic-card{padding:22px!important}
+ .premium-training,.galeria-henri{overflow:hidden}
+}
+@media(max-width:360px){body>header .nav-pro-brand{font-size:27px!important}body>header .nav-pro-links{gap:3px 10px!important}.logo-grid{grid-template-columns:1fr!important}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}}
 </style></head>
 <body><canvas aria-hidden="true" id="refined-tech-canvas"></canvas><div aria-hidden="true" class="premium-progress"></div>
 <header><nav class="wrap nav-pro"><strong class="nav-pro-brand"><span class="signature-dr">Dr.</span><span class="signature-name"> Henri del Carmen Damas </span><span class="signature-paz">Paz</span></strong><div class="links nav-pro-links"><a href="#sobre-mi">Sobre mí</a><a href="#trayectoria">Trayectoria</a><a href="#experiencia-profesional">Experiencia</a><a href="#formacion-continua">Constancias</a><a href="#proyectos">Proyectos</a><a href="#contacto">Contacto</a></div><a class="nav-pro-profile" href="#perfil-integral">Mi perfil ↗</a></nav></header><section aria-label="Presentación profesional de Henri Damas Paz" class="h-tech-hero"><canvas aria-hidden="true" id="abstract-tech-canvas"></canvas><div class="h-hero-copy"><div class="h-hero-eyebrow h-eyebrow-animated">Educación · Ingeniería · Innovación</div><h1><span class="h-title-line">Henri Damas</span><span class="h-title-line h-title-gold">Paz</span></h1><p class="h-hero-sub h-sub-animated">Doctor en Educación e Ingeniero en Sistemas Computacionales. Transformando el aprendizaje con tecnología, creatividad y proyectos que conectan el aula con el futuro.</p><div class="h-hero-pills"><span>✦ Doctor en Educación</span><span>⌘ Ingeniería en Sistemas</span><span>⚡ Robótica y Arduino</span></div><div class="h-hero-actions"><a class="h-hero-primary" href="#proyectos">Explorar proyectos ↗</a><a class="h-hero-secondary" href="#sobre-mi">Conoce mi trayectoria ↓</a></div></div><div class="h-hero-visual"><img alt="Retrato profesional de Henri Damas Paz" fetchpriority="high" src="foto-henri.jpg"/><div class="h-hero-chip">✦ Tecnología &amp; Educación</div></div></section>
