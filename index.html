@@ -665,13 +665,14 @@ const sections=['sobre-mi','perfil-integral','servicios','diseno','herramientas'
 const corpus=sections.map(id=>{const el=document.getElementById(id);if(!el)return null;const clone=el.cloneNode(true);clone.querySelectorAll('script,style,nav,button,form').forEach(x=>x.remove());let text=clone.innerText||clone.textContent||'';text=text.replace(/\s+/g,' ').trim();return {id,text};}).filter(x=>x&&x.text);
 function renderSafe(text){
  const fragment=document.createDocumentFragment();
- // Interpretar entidades y barras escapadas SOLO en la respuesta, sin ejecutar HTML.
- const textarea=document.createElement('textarea');
- let source=String(text||'').replace(/\r\n/g,'\n').replace(/\n/g,'\n').replace(/\t/g,'  ').replace(/\\`/g,'`');
- textarea.innerHTML=source.replace(/&(?!(?:#\d+|#x[0-9a-f]+|[a-z]+);)/gi,'&amp;');
- source=textarea.value.replace(/\r\n?/g,'\n').replace(/\\\+\s*/g,'+ ').replace(/\\([*#-])/g,'$1');
+ // Decodificar entidades sin interpretar HTML como elementos activos.
+ const decoder=document.createElement('textarea');
+ decoder.innerHTML=String(text||'').replace(/&(?!(?:#\d+|#x[0-9a-f]+|[a-z]+);)/gi,'&amp;');
+ let source=decoder.value.replace(/\r\n?/g,'\n').replace(/\\`/g,'`').replace(/\\([*+#-])/g,'$1').replace(/\t/g,'  ');
+ // El modelo a veces escribe barras literales al final de cada línea.
+ source=source.replace(/\\\s*\n/g,'\n');
  const lines=source.split('\n');
- let codeLines=null,language='';let list=null,listType='';
+ let codeLines=null,language='',list=null,listType='',lastItem=null;
  const inline=(value,parent)=>{
   const re=/(\*\*[^*\n]+\*\*|`[^`\n]+`)/g;let pos=0,m;
   while((m=re.exec(value))){if(m.index>pos)parent.append(document.createTextNode(value.slice(pos,m.index)));
@@ -687,24 +688,26 @@ function renderSafe(text){
   const code=codeLines.join('\n').replace(/\n+$/,'');
   const pre=document.createElement('pre'),el=document.createElement('code');el.textContent=code;pre.append(el);
   button.addEventListener('click',async()=>{
-   try{if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(code)}else{throw new Error('Clipboard no disponible')}
-    button.textContent='✓ Copiado';}
+   try{if(!navigator.clipboard?.writeText)throw Error('Sin acceso al portapapeles');await navigator.clipboard.writeText(code);button.textContent='✓ Copiado'}
    catch{const selection=window.getSelection(),range=document.createRange();range.selectNodeContents(el);selection.removeAllRanges();selection.addRange(range);let copied=false;try{copied=document.execCommand('copy')}catch(_){}button.textContent=copied?'✓ Copiado':'Seleccionado: Ctrl+C';}
    setTimeout(()=>button.textContent='⧉ Copiar',2200);
   });
   head.append(label,button);wrap.append(head,pre);fragment.append(wrap);codeLines=null;language='';
  };
- const closeList=()=>{list=null;listType=''};
+ const closeList=()=>{list=null;listType='';lastItem=null};
  for(const raw of lines){const line=raw.replace(/\\\s*$/,'');
   const fence=line.trim().match(/^```\s*([\w+#-]*)\s*$/);
   if(fence){closeList();if(codeLines!==null)finishCode();else{codeLines=[];language=fence[1]||'Código'}continue}
   if(codeLines!==null){codeLines.push(raw);continue}
-  if(!line.trim()){continue}
+  if(!line.trim())continue;
+  // Subviñetas (+ texto), incluidos espacios y entidades tabuladas.
+  const nested=line.match(/^\s{2,}[+*•-]\s+(.+)$/);
+  if(nested&&lastItem){let sub=lastItem.lastElementChild;if(!sub||sub.tagName!=='UL'){sub=document.createElement('ul');lastItem.append(sub)}const li=document.createElement('li');inline(nested[1],li);sub.append(li);continue}
   const item=line.match(/^\s*(?:([-*•+])|(\d+)[.)])\s+(.+)$/);
-  if(item){const kind=item[2]?'ol':'ul';if(!list||listType!==kind){list=document.createElement(kind);list.className='hg-list';fragment.append(list);listType=kind}const li=document.createElement('li');inline(item[3],li);list.append(li);continue}
+  if(item){const kind=item[2]?'ol':'ul';if(!list||listType!==kind){list=document.createElement(kind);list.className='hg-list';fragment.append(list);listType=kind}const li=document.createElement('li');inline(item[3],li);list.append(li);lastItem=li;continue}
   closeList();const para=document.createElement('p');para.className='hg-paragraph';inline(line,para);fragment.append(para);
  }
- if(codeLines!==null){finishCode();const note=document.createElement('small');note.className='hg-warning';note.textContent='Aviso: el modelo no cerró el bloque de código; verifica que el programa esté completo.';fragment.append(note)}
+ if(codeLines!==null){finishCode();const note=document.createElement('small');note.className='hg-warning';note.textContent='El modelo no cerró el bloque de código; comprueba que el programa esté completo.';fragment.append(note)}
  return fragment;
 }
 function setAnswer(el,text){el.replaceChildren(renderSafe(text))}
@@ -714,6 +717,17 @@ function bestTopic(q){const n=normalize(q);let best=null,score=0;for(const t of 
 function searchPage(q){const tokens=words(q);if(!tokens.length)return null;let best=null,score=0;for(const entry of corpus){const sentences=entry.text.match(/[^.!?]{18,240}[.!?]?/g)||[];for(const sentence of sentences){const n=normalize(sentence);const hits=tokens.filter(t=>n.includes(t));const val=hits.length*3+(hits.length===tokens.length?3:0);if(hits.length>=Math.min(2,tokens.length)&&val>score){score=val;best={answer:sentence.trim(),target:entry.id}}}}return score>=6?best:null}
 const AI_ENDPOINT='https://henri-guia-ia.hpaz9656.workers.dev/';
 const history=[];let busy=false;
+function buildHistory(){
+ const recent=history.slice(-8);let budget=10500;
+ const selected=[];
+ for(let i=recent.length-1;i>=0;i--){
+  const m=recent[i],max=m.role==='assistant'?4500:650;
+  const content=String(m.content||'').slice(0,Math.min(max,budget));
+  if(!content)break;
+  selected.unshift({role:m.role,content});budget-=content.length;
+ }
+ return selected;
+}
 const reset=root.querySelector('.hg-reset');if(reset)reset.addEventListener('click',()=>{if(busy)return;history.length=0;messages.replaceChildren();bubble('¡Hola! Soy HENRI IA. Iniciamos una conversación nueva. ¿En qué puedo ayudarte?','bot')});
 async function respond(q){
  q=q.trim().slice(0,500);if(!q||busy)return;busy=true;const sendButton=form.querySelector('button[type=submit]');sendButton.disabled=true;
@@ -723,14 +737,14 @@ async function respond(q){
   if(AI_ENDPOINT.includes('REEMPLAZAR-CON-TU-WORKER'))throw new Error('pendiente');
   const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),55000);
   let response;
-  try{response=await fetch(AI_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pregunta:q,historial:history.slice(-6)}),signal:controller.signal});}
+  try{response=await fetch(AI_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pregunta:q,historial:buildHistory()}),signal:controller.signal});}
   finally{clearTimeout(timeout)}
-  if(!response.ok)throw new Error('Servicio no disponible (HTTP '+response.status+')');
+  if(!response.ok){let detail='';try{const errBody=await response.json();detail=errBody?.error||''}catch(_){}throw new Error(detail||'Servicio no disponible (HTTP '+response.status+')');}
   const data=await response.json();if(data?.error)throw new Error(String(data.error));const answer=typeof data.respuesta==='string'?data.respuesta:typeof data.answer==='string'?data.answer:'';if(!answer)throw new Error('Respuesta inválida');
   setAnswer(loading,answer);
   if(data?.posiblemente_incompleta){const warning=document.createElement('small');warning.className='hg-warning';warning.textContent='La IA podría haber alcanzado el límite de generación. Comprueba el final del código.';loading.append(warning)}
   history.push({role:'user',content:q},{role:'assistant',content:answer.slice(0,6000)});
-  if(history.length>12)history.splice(0,history.length-12);
+  if(history.length>16)history.splice(0,history.length-16);
  }catch(error){
   console.warn('HENRI IA:',error);const match=bestTopic(q)||searchPage(q);
   setAnswer(loading,match?match.answer:'No pude conectar con HENRI IA en este momento. Intenta nuevamente o consulta el portafolio.');
