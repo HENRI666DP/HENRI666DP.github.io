@@ -671,7 +671,7 @@ async function respond(q){
   if(AI_ENDPOINT.includes('REEMPLAZAR-CON-TU-WORKER'))throw new Error('pendiente');
   const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),25000);
   let response;
-  try{response=await fetch(AI_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pregunta:q,message:q,history:history.slice(-6)}),signal:controller.signal});}
+  try{response=await fetch(AI_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pregunta:q,historial:history.slice(-6)}),signal:controller.signal});}
   finally{clearTimeout(timeout)}
   if(!response.ok)throw new Error('Servicio no disponible');
   const data=await response.json();const answer=typeof data.respuesta==='string'?data.respuesta:typeof data.answer==='string'?data.answer:'';if(!answer)throw new Error('Respuesta inválida');
@@ -681,7 +681,7 @@ async function respond(q){
  }catch(error){
   const match=bestTopic(q)||searchPage(q);
   setAnswer(loading,match?match.answer:'No pude conectar con HENRI IA en este momento. Intenta nuevamente o consulta el portafolio.');
-  if(match){const notice=document.createElement('small');notice.className='hg-fallback-label';notice.textContent='Respuesta de respaldo basada en el portafolio';loading.prepend(notice);const section=document.getElementById(match.target);if(section){const a=document.createElement('a');a.href='#'+match.target;a.textContent='↗ Ver información en la página';a.className='hg-source-link';a.addEventListener('click',()=>toggle(false));messages.append(a)}}
+  if(match){history.push({role:'user',content:q},{role:'assistant',content:match.answer.slice(0,1800)});if(history.length>12)history.splice(0,history.length-12);const notice=document.createElement('small');notice.className='hg-fallback-label';notice.textContent='Respuesta de respaldo basada en el portafolio';loading.prepend(notice);const section=document.getElementById(match.target);if(section){const a=document.createElement('a');a.href='#'+match.target;a.textContent='↗ Ver información en la página';a.className='hg-source-link';a.addEventListener('click',()=>toggle(false));messages.append(a)}}
   if(AI_ENDPOINT.includes('REEMPLAZAR-CON-TU-WORKER')){const hint=document.createElement('small');hint.textContent='Modo local: conecta Cloudflare para activar la IA generativa.';hint.style.opacity='.7';messages.append(hint)}
  }
  messages.scrollTop=messages.scrollHeight;busy=false;sendButton.disabled=false;
