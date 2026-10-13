@@ -742,6 +742,7 @@ async function respond(q){
   if(!response.ok){let detail='';try{const errBody=await response.json();detail=errBody?.error||''}catch(_){}throw new Error(detail||'Servicio no disponible (HTTP '+response.status+')');}
   const data=await response.json();if(data?.error)throw new Error(String(data.error));const answer=typeof data.respuesta==='string'?data.respuesta:typeof data.answer==='string'?data.answer:'';if(!answer)throw new Error('Respuesta inválida');
   setAnswer(loading,answer);
+  if(Array.isArray(data?.advertencias_revision)&&data.advertencias_revision.length){const warning=document.createElement('small');warning.className='hg-warning';warning.textContent='Revisión automática pendiente: '+data.advertencias_revision.join(' | ');loading.append(warning)}
   if(data?.posiblemente_incompleta){const warning=document.createElement('small');warning.className='hg-warning';warning.textContent='La IA podría haber alcanzado el límite de generación. Comprueba el final del código.';loading.append(warning)}
   history.push({role:'user',content:q},{role:'assistant',content:answer.slice(0,6000)});
   if(history.length>16)history.splice(0,history.length-16);
