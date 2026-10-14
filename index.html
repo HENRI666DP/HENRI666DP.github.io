@@ -529,7 +529,7 @@ header:has(.mobile-open) .nav-pro-profile{display:flex!important}
 @keyframes hgRobotBlink{0%,43%,47%,100%{transform:scaleY(1)}45%{transform:scaleY(.12)}}
 @media(max-width:600px){#henri-guide .hg-trigger .hg-avatar{width:50px;height:55px}#henri-guide .hg-trigger{padding:3px 12px 3px 5px!important}#henri-guide .hg-head .hg-avatar{width:42px;height:47px}}
 @media(prefers-reduced-motion:reduce){#henri-guide .hg-avatar,#henri-guide .hg-avatar::before,#henri-guide .hg-avatar .hg-eyes{animation:none!important}}
-</style><style id="guide-expanded-qa-style">.hg-source-link{display:block;margin:8px 14px 14px;color:#f1ce8b;font-size:13px;text-decoration:underline;text-underline-offset:3px}.hg-source-link:focus-visible{outline:2px solid #f1ce8b;outline-offset:3px}.hg-messages{scroll-behavior:smooth}</style><style id="henri-ia-polish-2026">
+</style><style id="guide-expanded-qa-style">.hg-source-link{display:inline;margin:0;color:#f1ce8b;font-size:13px;text-decoration:underline;text-underline-offset:3px}.hg-source-link:focus-visible{outline:2px solid #f1ce8b;outline-offset:3px}.hg-messages{scroll-behavior:smooth}</style><style id="henri-ia-polish-2026">
 #henri-guide .hg-window{box-shadow:0 22px 65px rgba(0,0,0,.38);border-color:rgba(224,183,106,.48)}
 #henri-guide .hg-head strong{letter-spacing:.01em}
 #henri-guide .hg-bubble{white-space:normal;overflow-wrap:anywhere;line-height:1.58}
@@ -676,7 +676,7 @@ function renderSafe(text){
  const inline=(value,parent)=>{
   // Markdown seguro: enlaces HTTPS, negritas y código sin inyectar HTML.
   // También acepta enlaces escapados como [Título]\\(https://ejemplo.com).
-  const cleaned=String(value).replace(/\\\(/g,'(').replace(/\\\)/g,')');
+  const cleaned=String(value).replace(/\\\(/g,'(').replace(/\\\)/g,')').replace(/\[([^\]\n]{1,180})\]\(\[(https:\/\/[^\]\n]+)\]\(https:\/\/[^\n)]*\)\)/g,(_m,label,url)=>`[${label}](${url})`);
   const tokens=/(\[([^\]\n]{1,180})\]\((https:\/\/[^\s)]+)\)|\*\*[^*\n]+\*\*|`[^`\n]+`)/g;
   let pos=0,m;
   while((m=tokens.exec(cleaned))){
