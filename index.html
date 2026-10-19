@@ -786,7 +786,9 @@ function henriSpokenText(answer){
   .replace(/\[([^\]]+)\]\([^)]*\)/g,'$1')
   .replace(/[*_`#>|~]/g,' ').replace(/\s+/g,' ').trim().slice(0,4500);
 }
-function henriPreferredVoice(){
+function henriPreferredVoice(lang='es-MX'){
+ if(/^en/i.test(lang)){const voices=henriSpeech?henriSpeech.getVoices():[];return voices.find(v=>/^en[-_]US$/i.test(v.lang)&&/natural|neural|online|google|microsoft/i.test(v.name))||voices.find(v=>/^en[-_]US$/i.test(v.lang))||voices.find(v=>/^en/i.test(v.lang))||null;}
+
  const voices=henriSpeech?henriSpeech.getVoices():[];
  return voices.find(v=>/^es[-_]MX$/i.test(v.lang)&&(/natural|neural|online|google|microsoft/i.test(v.name)))
   ||voices.find(v=>/^es[-_]MX$/i.test(v.lang))
@@ -802,8 +804,13 @@ function henriAddSpeechButton(bubbleEl,answer){
  button.addEventListener('click',()=>{
   if(henriCurrentSpeech===button){henriStopSpeech();return;}
   henriStopSpeech();
-  const utterance=new SpeechSynthesisUtterance(spoken);utterance.lang='es-MX';utterance.rate=0.95;utterance.pitch=1;
-  const voice=henriPreferredVoice();if(voice)utterance.voice=voice;
+  const utterance=new SpeechSynthesisUtterance(spoken);
+  const englishHint=/\b(?:translation into english|english translation|translated into english|in english|en inglés|traducción al inglés)\b/i.test(answer);
+  const englishWords=(spoken.match(/\b(?:the|and|with|from|this|that|have|your|you|are|was|were|will|would|could|should|there|their|because)\b/gi)||[]).length;
+  const spanishWords=(spoken.match(/\b(?:que|para|con|una|los|las|del|por|como|está|son|puede|también|porque|español)\b/gi)||[]).length;
+  const speechLang=(englishHint||englishWords>=4&&englishWords>spanishWords*1.6)?'en-US':'es-MX';
+  utterance.lang=speechLang;utterance.rate=0.95;utterance.pitch=1;
+  const voice=henriPreferredVoice(speechLang);if(voice)utterance.voice=voice;
   henriCurrentSpeech=button;button.textContent='⏹ Detener lectura';button.setAttribute('aria-pressed','true');
   utterance.onend=()=>{if(henriCurrentSpeech===button)henriStopSpeech()};
   utterance.onerror=()=>{if(henriCurrentSpeech===button){henriStopSpeech();note.textContent='No se pudo reproducir la voz en este navegador.';}};
