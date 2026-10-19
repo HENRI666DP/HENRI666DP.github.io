@@ -1053,4 +1053,112 @@ form.addEventListener('submit',e=>{e.preventDefault();const q=input.value;if(!q.
  if(current!=='es')cookieLanguage(current);
  const tag=document.createElement('script');tag.src='https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';tag.async=true;tag.onerror=()=>{console.warn('Traductor externo no disponible. El idioma de HENRI IA permanece seleccionable.')};document.head.appendChild(tag);
 })();
-</script></body></html>
+</script>
+<style id="henri-avatar-realista-css">
+#henri-guide .hg-avatar{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+#henri-guide .hg-avatar img.henri-avatar-img{width:100%;height:100%;object-fit:cover;object-position:center 28%;border-radius:inherit;display:block}
+#henri-guide .hg-avatar.henri-avatar-speaking{box-shadow:0 0 0 2px #d7b46d,0 0 19px #32c9ff;animation:henri-avatar-breathe .75s ease-in-out infinite alternate}
+#henri-guide .hg-avatar.henri-avatar-speaking::after{content:"";position:absolute;left:41%;right:41%;top:69%;height:3px;background:#172337;border-radius:50%;animation:henri-avatar-mouth .18s ease-in-out infinite alternate;opacity:.85;pointer-events:none}
+#henri-guide .hg-head .hg-avatar{border-radius:50%}
+#henri-guide .hg-trigger .hg-avatar{border-radius:50%}
+@keyframes henri-avatar-breathe{to{filter:brightness(1.13);transform:scale(1.04)}}
+@keyframes henri-avatar-mouth{to{height:9px;top:67%;border-radius:45%;}}
+@media(prefers-reduced-motion:reduce){#henri-guide .hg-avatar.henri-avatar-speaking{animation:none}#henri-guide .hg-avatar.henri-avatar-speaking::after{animation:none}}
+</style>
+<script id="henri-avatar-realista-script">
+(()=>{
+'use strict';
+const init=()=>{
+ const root=document.getElementById('henri-guide');
+ if(!root||root.dataset.realisticAvatarInstalled)return;
+ root.dataset.realisticAvatarInstalled='1';
+ const avatars=[...root.querySelectorAll('.hg-avatar')];
+ avatars.forEach((holder)=>{
+   const image=document.createElement('img');
+   image.src='henri-ia-avatar-realista.webp';
+   image.alt='';
+   image.className='henri-avatar-img';
+   image.loading='lazy';
+   image.onerror=()=>{image.remove();};
+   holder.appendChild(image);
+ });
+ const speech=('speechSynthesis' in window)?window.speechSynthesis:null;
+ if(!speech)return;
+ let active=false;
+ const refresh=()=>{
+   const now=!!speech.speaking&&!speech.paused;
+   if(now!==active){active=now;avatars.forEach(el=>el.classList.toggle('henri-avatar-speaking',now));}
+ };
+ // Solo observa el estado de voz existente. No modifica el Worker ni el chat.
+ const timer=setInterval(()=>{if(!document.contains(root)){clearInterval(timer);return;}refresh();},140);
+ document.addEventListener('visibilitychange',refresh);
+};
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
+</script>
+
+<style id="henri-copy-tools-style">
+#henri-guide .hg-bubble.bot{user-select:text;-webkit-user-select:text}
+#henri-guide .henri-copy-answer{display:block;margin-top:10px;padding:6px 11px;border:1px solid #e7c18399;border-radius:9px;background:#0c253e;color:#f4d59a;font-size:12px;font-weight:700;cursor:pointer}
+#henri-guide .henri-copy-answer:hover{background:#183b58}
+#henri-guide .henri-paste-question{border:1px solid #e7c18399;border-radius:10px;background:#142e48;color:#f4d59a;padding:7px 10px;cursor:pointer;font-size:12px}
+</style>
+<script id="henri-copy-tools-script">
+(()=>{
+ 'use strict';
+ function start(){
+  const root=document.getElementById('henri-guide');
+  if(!root||root.dataset.henriCopyInstalled)return;
+  root.dataset.henriCopyInstalled='1';
+  const messages=root.querySelector('.hg-messages');
+  if(!messages)return;
+  function installButtons(){
+   messages.querySelectorAll('.hg-bubble.bot').forEach(bubble=>{
+    if(bubble.querySelector('.henri-copy-answer'))return;
+    const button=document.createElement('button');
+    button.type='button';button.className='henri-copy-answer';button.textContent='📋 Copiar respuesta';
+    button.addEventListener('click',async()=>{
+     const clone=bubble.cloneNode(true);
+     clone.querySelectorAll('.henri-copy-answer').forEach(x=>x.remove());
+     const value=(clone.innerText||clone.textContent||'').trim();
+     if(!value)return;
+     try{
+      if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(value);
+      else throw new Error('clipboard unavailable');
+      button.textContent='✓ Copiado';
+     }catch(e){
+      const selection=window.getSelection();const range=document.createRange();
+      range.selectNodeContents(bubble);selection.removeAllRanges();selection.addRange(range);
+      button.textContent='Seleccionado: pulsa Ctrl+C';
+     }
+     setTimeout(()=>{if(button.isConnected)button.textContent='📋 Copiar respuesta';},2200);
+    });
+    bubble.appendChild(button);
+   });
+  }
+  installButtons();
+  const observer=new MutationObserver(installButtons);
+  observer.observe(messages,{childList:true,subtree:false});
+  const input=root.querySelector('.hg-input');
+  if(input){
+   const paste=document.createElement('button');
+   paste.type='button';paste.className='henri-paste-question';paste.textContent='📋 Pegar';paste.title='Pegar texto del portapapeles';
+   paste.addEventListener('click',async()=>{
+    try{
+     if(!navigator.clipboard?.readText)throw new Error('not supported');
+     const text=await navigator.clipboard.readText();
+     if(text){
+      const from=input.selectionStart??input.value.length,to=input.selectionEnd??from;
+      input.setRangeText(text,from,to,'end');
+      input.dispatchEvent(new Event('input',{bubbles:true}));
+     }
+     input.focus();
+    }catch(e){input.focus();paste.title='Permite el portapapeles o usa Ctrl+V';paste.textContent='Usa Ctrl+V';setTimeout(()=>paste.textContent='📋 Pegar',2200);}
+   });
+   input.insertAdjacentElement('afterend',paste);
+  }
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+})();
+</script>
+</body></html>
