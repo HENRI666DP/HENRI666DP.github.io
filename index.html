@@ -794,10 +794,21 @@ function henriDetectLanguage(t){
 }
 function henriChooseVoice(lang){
  const voices=henriSpeech?henriSpeech.getVoices():[];
- const exact=voices.filter(v=>v.lang.replace('_','-').toLowerCase()===lang.toLowerCase());
- const family=voices.filter(v=>v.lang.toLowerCase().startsWith(lang.slice(0,2).toLowerCase()));
- const pool=exact.length?exact:family;
- return pool.find(v=>/natural|neural|online/i.test(v.name))||pool.find(v=>/microsoft|google/i.test(v.name))||pool[0]||null;
+ const code=lang.toLowerCase();
+ const pool=voices.filter(v=>v.lang.replace('_','-').toLowerCase()===code);
+ const candidates=pool.length?pool:voices.filter(v=>v.lang.toLowerCase().startsWith(code.slice(0,2)));
+ const score=v=>{
+  const name=v.name.toLowerCase();let n=0;
+  if(/natural|neural|online/.test(name))n+=100;
+  if(/microsoft/.test(name))n+=25;
+  if(/google/.test(name))n+=15;
+  if(code==='en-us'&&/aria|jenny|guy|andrew|ava|emma/.test(name))n+=45;
+  if(code==='en-gb'&&/sonia|ryan|libby|oliver/.test(name))n+=45;
+  if(code==='es-mx'&&/dalia|jorge|raul|sabina/.test(name))n+=45;
+  if(v.localService===false)n+=5;
+  return n;
+ };
+ return candidates.sort((a,b)=>score(b)-score(a))[0]||null;
 }
 function henriSpeechChunks(text,max=240){
  const sentences=text.match(/[^.!?\n]+(?:[.!?]+|\n+|$)/g)||[text];
@@ -814,10 +825,12 @@ function henriAddSpeechButton(bubbleEl,answer,kind='respuesta'){
  const spoken=henriSpokenText(answer).replace(kind==='original'?/^(?:traduce|traducir|translate)(?:\s+(?:todo|este texto|el siguiente texto|al español|a español|to spanish))?\s*[:：-]\s*/i:/^$a/, '');if(!spoken)return;
  const controls=document.createElement('div');controls.className='hg-speech-controls';
  const button=document.createElement('button');button.type='button';button.className='hg-speech-button';button.textContent=kind==='original'?'🔊 Leer texto en inglés':'🔊 Leer traducción / respuesta';button.setAttribute('aria-pressed','false');
- const note=document.createElement('span');note.className='hg-speech-note';note.textContent='Lectura natural · sin Neurons';
+ const note=document.createElement('span');note.className='hg-speech-note';note.textContent='Voz profesional si está disponible · sin Neurons';
  const choice=document.createElement('select');choice.setAttribute('aria-label','Idioma y acento de lectura');
  choice.value=kind==='original'?'en-US':'auto';choice.style.cssText='max-width:150px;padding:7px;border-radius:8px;background:#14243b;color:#fff;border:1px solid #e7bc73;font-size:12px';
  [['auto','🌐 Automático'],['en-US','🇺🇸 Inglés americano'],['en-GB','🇬🇧 Inglés británico'],['es-MX','🇲🇽 Español']].forEach(([value,label])=>{const opt=document.createElement('option');opt.value=value;opt.textContent=label;choice.appendChild(opt);});
+ const speed=document.createElement('select');speed.setAttribute('aria-label','Velocidad de lectura');speed.style.cssText='max-width:130px;padding:7px;border-radius:8px;background:#14243b;color:#fff;border:1px solid #e7bc73;font-size:12px';
+ [['0.85','Pausada'],['0.95','Natural'],['1','Normal'],['1.1','Ágil']].forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;speed.appendChild(o)});speed.value='0.95';
  button.dataset.defaultLabel=button.textContent;button.addEventListener('click',()=>{
   if(henriCurrentSpeech===button){henriStopSpeech();return;}
   henriStopSpeech();const session=henriSpeechSession;
@@ -830,7 +843,7 @@ function henriAddSpeechButton(bubbleEl,answer,kind='respuesta'){
   function next(){
    if(session!==henriSpeechSession||henriCurrentSpeech!==button)return;
    if(index>=chunks.length){henriStopSpeech();return;}
-   const u=new SpeechSynthesisUtterance(chunks[index++]);u.lang=lang;u.rate=lang.startsWith('en')?0.9:0.95;u.pitch=1;
+   const u=new SpeechSynthesisUtterance(chunks[index++]);u.lang=lang;u.rate=Number(speed.value);u.pitch=1;
    if(voice)u.voice=voice;
    u.onend=next;
    u.onerror=e=>{if(e.error==='canceled'||e.error==='interrupted')return;henriStopSpeech();note.textContent='Error de voz: comprueba las voces de tu navegador.';};
@@ -839,7 +852,8 @@ function henriAddSpeechButton(bubbleEl,answer,kind='respuesta'){
   next();
  });
  choice.addEventListener('change',()=>{if(henriCurrentSpeech===button)henriStopSpeech();});
- controls.append(button,choice,note);bubbleEl.append(controls);
+ speed.addEventListener('change',()=>{if(henriCurrentSpeech===button)henriStopSpeech();});
+ controls.append(button,choice,speed,note);bubbleEl.append(controls);
 }
 
 const reset=root.querySelector('.hg-reset');if(reset)reset.addEventListener('click',()=>{if(busy)return;henriStopSpeech();history.length=0;messages.replaceChildren();bubble('¡Hola! Soy HENRI IA. Iniciamos una conversación nueva. ¿En qué puedo ayudarte?','bot')});
