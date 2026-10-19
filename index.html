@@ -756,7 +756,7 @@ function renderSafe(text){
  return fragment;
 }
 function setAnswer(el,text){el.replaceChildren(renderSafe(text))}
-function bubble(text,who){const el=document.createElement('div');el.className='hg-bubble '+who;setAnswer(el,text);messages.append(el);messages.scrollTop=messages.scrollHeight}
+function bubble(text,who){const el=document.createElement('div');el.className='hg-bubble '+who;setAnswer(el,text);messages.append(el);messages.scrollTop=messages.scrollHeight;if(who==='user'&&typeof henriAddSpeechButton==='function'&&henriDetectLanguage(text)==='en-US')henriAddSpeechButton(el,text,'original');return el}
 function words(q){return normalize(q).split(' ').filter(x=>x.length>3&&!stop.has(x))}
 function bestTopic(q){const n=normalize(q);let best=null,score=0;for(const t of topics){let v=0;for(const k of t.keys){const kn=normalize(k);if(n.includes(kn))v+=kn.includes(' ')?9:5;else if(kn.includes(' ')&&kn.split(' ').every(w=>n.includes(w)))v+=6;}if(v>score){best=t;score=v}}return score>=5?best:null}
 function searchPage(q){const tokens=words(q);if(!tokens.length)return null;let best=null,score=0;for(const entry of corpus){const sentences=entry.text.match(/[^.!?]{18,240}[.!?]?/g)||[];for(const sentence of sentences){const n=normalize(sentence);const hits=tokens.filter(t=>n.includes(t));const val=hits.length*3+(hits.length===tokens.length?3:0);if(hits.length>=Math.min(2,tokens.length)&&val>score){score=val;best={answer:sentence.trim(),target:entry.id}}}}return score>=6?best:null}
@@ -779,7 +779,7 @@ let henriCurrentSpeech=null,henriSpeechSession=0;
 function henriStopSpeech(){
  henriSpeechSession++;
  if(henriSpeech){try{henriSpeech.cancel()}catch(_){}}
- if(henriCurrentSpeech){henriCurrentSpeech.textContent='🔊 Escuchar respuesta';henriCurrentSpeech.setAttribute('aria-pressed','false');henriCurrentSpeech=null;}
+ if(henriCurrentSpeech){henriCurrentSpeech.textContent=henriCurrentSpeech.dataset.defaultLabel||'🔊 Escuchar respuesta';henriCurrentSpeech.setAttribute('aria-pressed','false');henriCurrentSpeech=null;}
 }
 function henriSpokenText(answer){
  return String(answer||'').replace(/```[\s\S]*?```/g,' Código omitido. ')
@@ -809,16 +809,16 @@ function henriSpeechChunks(text,max=240){
  if(current.trim())chunks.push(current.trim());
  return chunks;
 }
-function henriAddSpeechButton(bubbleEl,answer){
+function henriAddSpeechButton(bubbleEl,answer,kind='respuesta'){
  if(!henriSpeech)return;
- const spoken=henriSpokenText(answer);if(!spoken)return;
+ const spoken=henriSpokenText(answer).replace(kind==='original'?/^(?:traduce|traducir|translate)(?:\s+(?:todo|este texto|el siguiente texto|al español|a español|to spanish))?\s*[:：-]\s*/i:/^$a/, '');if(!spoken)return;
  const controls=document.createElement('div');controls.className='hg-speech-controls';
- const button=document.createElement('button');button.type='button';button.className='hg-speech-button';button.textContent='🔊 Escuchar respuesta';button.setAttribute('aria-pressed','false');
+ const button=document.createElement('button');button.type='button';button.className='hg-speech-button';button.textContent=kind==='original'?'🔊 Leer texto en inglés':'🔊 Leer traducción / respuesta';button.setAttribute('aria-pressed','false');
  const note=document.createElement('span');note.className='hg-speech-note';note.textContent='Lectura natural · sin Neurons';
  const choice=document.createElement('select');choice.setAttribute('aria-label','Idioma y acento de lectura');
- choice.style.cssText='max-width:150px;padding:7px;border-radius:8px;background:#14243b;color:#fff;border:1px solid #e7bc73;font-size:12px';
+ choice.value=kind==='original'?'en-US':'auto';choice.style.cssText='max-width:150px;padding:7px;border-radius:8px;background:#14243b;color:#fff;border:1px solid #e7bc73;font-size:12px';
  [['auto','🌐 Automático'],['en-US','🇺🇸 Inglés americano'],['en-GB','🇬🇧 Inglés británico'],['es-MX','🇲🇽 Español']].forEach(([value,label])=>{const opt=document.createElement('option');opt.value=value;opt.textContent=label;choice.appendChild(opt);});
- button.addEventListener('click',()=>{
+ button.dataset.defaultLabel=button.textContent;button.addEventListener('click',()=>{
   if(henriCurrentSpeech===button){henriStopSpeech();return;}
   henriStopSpeech();const session=henriSpeechSession;
   const lang=choice.value==='auto'?henriDetectLanguage(spoken):choice.value;
@@ -858,7 +858,7 @@ async function respond(q){
   setAnswer(loading,answer);
   if(Array.isArray(data?.advertencias_revision)&&data.advertencias_revision.length){const warning=document.createElement('small');warning.className='hg-warning';warning.textContent='Revisión automática pendiente: '+data.advertencias_revision.join(' | ');loading.append(warning)}
   if(data?.posiblemente_incompleta){const warning=document.createElement('small');warning.className='hg-warning';warning.textContent='La IA podría haber alcanzado el límite de generación. Comprueba el final del código.';loading.append(warning)}
-  henriAddSpeechButton(loading,answer);
+  henriAddSpeechButton(loading,answer,'respuesta');
   history.push({role:'user',content:q},{role:'assistant',content:answer.slice(0,6000)});
   if(history.length>16)history.splice(0,history.length-16);
  }catch(error){
