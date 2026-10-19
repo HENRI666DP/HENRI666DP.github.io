@@ -1131,4 +1131,37 @@ function start(){
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
 </script>
+
+<style id="henri-responsive-maximize-css">
+#henri-guide .hg-window{transition:width .18s ease,height .18s ease}
+#henri-guide.hg-maximized .hg-window{position:fixed!important;inset:clamp(8px,1.5vw,18px)!important;width:auto!important;height:auto!important;max-width:none!important;max-height:none!important;border-radius:clamp(12px,1.2vw,20px)!important;z-index:2147483001!important}
+#henri-guide .hg-maximize,#henri-guide .hg-minimize{flex:0 0 auto;display:grid;place-items:center;width:35px;height:35px;border:1px solid #ffffff55;border-radius:10px;background:#16334f;color:#fff;font-size:20px;cursor:pointer}
+#henri-guide .hg-maximize:hover,#henri-guide .hg-minimize:hover{background:#275679}
+#henri-guide .hg-head{gap:8px;flex-shrink:0}
+#henri-guide .hg-head>div{min-width:0;flex:1}
+#henri-guide .hg-head strong,#henri-guide .hg-head small{overflow-wrap:anywhere}
+#henri-guide.hg-maximized .hg-messages{flex:1;min-height:0;overflow-y:auto}
+@media(max-width:600px){#henri-guide.hg-maximized .hg-window{inset:0!important;border-radius:0!important}#henri-guide .hg-head{padding:9px 10px;gap:6px}#henri-guide .hg-maximize,#henri-guide .hg-minimize,#henri-guide .hg-close{width:32px;height:32px;font-size:19px}#henri-guide .hg-head strong{font-size:13px}#henri-guide .hg-head small{font-size:10px}}
+@media(max-height:520px){#henri-guide.hg-maximized .hg-head{padding-top:6px;padding-bottom:6px}#henri-guide.hg-maximized .hg-quick{padding:4px 8px}#henri-guide.hg-maximized .hg-note{display:none}}
+</style>
+<script id="henri-responsive-maximize-script">
+(()=>{
+ 'use strict';
+ function init(){
+  const root=document.getElementById('henri-guide');if(!root||root.dataset.responsiveControls)return;
+  const head=root.querySelector('.hg-head'),close=root.querySelector('.hg-close'),trigger=root.querySelector('.hg-trigger'),win=root.querySelector('.hg-window');
+  if(!head||!close||!trigger||!win)return;
+  root.dataset.responsiveControls='true';
+  const max=document.createElement('button');max.type='button';max.className='hg-maximize';max.textContent='⛶';max.title='Maximizar conversación';max.setAttribute('aria-label','Maximizar conversación');
+  const min=document.createElement('button');min.type='button';min.className='hg-minimize';min.textContent='−';min.title='Minimizar conversación';min.setAttribute('aria-label','Minimizar conversación');
+  head.insertBefore(max,close);head.insertBefore(min,close);
+  function maximize(on){root.classList.toggle('hg-maximized',on);max.textContent=on?'❐':'⛶';max.title=on?'Restaurar tamaño':'Maximizar conversación';max.setAttribute('aria-label',max.title);}
+  max.addEventListener('click',()=>{if(!root.classList.contains('hg-open'))trigger.click();maximize(!root.classList.contains('hg-maximized'));});
+  min.addEventListener('click',()=>{maximize(false);if(root.classList.contains('hg-open'))trigger.click();});
+  close.addEventListener('click',()=>maximize(false));
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')maximize(false)});
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
+</script>
 </body></html>
