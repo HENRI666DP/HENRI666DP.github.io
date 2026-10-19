@@ -1098,67 +1098,79 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 </script>
 
 <style id="henri-copy-tools-style">
-#henri-guide .hg-bubble.bot{user-select:text;-webkit-user-select:text}
-#henri-guide .henri-copy-answer{display:block;margin-top:10px;padding:6px 11px;border:1px solid #e7c18399;border-radius:9px;background:#0c253e;color:#f4d59a;font-size:12px;font-weight:700;cursor:pointer}
-#henri-guide .henri-copy-answer:hover{background:#183b58}
-#henri-guide .henri-paste-question{border:1px solid #e7c18399;border-radius:10px;background:#142e48;color:#f4d59a;padding:7px 10px;cursor:pointer;font-size:12px}
+#henri-guide .hg-bubble.bot{user-select:text!important;-webkit-user-select:text!important}
+#henri-guide .henri-copy-answer,#henri-guide .henri-paste-question{display:inline-flex!important;align-items:center;justify-content:center;gap:5px;min-height:34px;padding:7px 11px;border:1px solid #e7c183!important;border-radius:10px;background:#122c45!important;color:#f4d59a!important;font-size:12px;font-weight:700;cursor:pointer;visibility:visible!important;opacity:1!important}
+#henri-guide .henri-copy-answer{margin-top:10px;max-width:100%}
+#henri-guide .henri-paste-question{flex:none;white-space:nowrap}
+#henri-guide .henri-copy-answer:hover,#henri-guide .henri-paste-question:hover{background:#254967!important}
+#henri-guide .hg-form{flex-wrap:wrap}
+#henri-guide .hg-form .hg-input{flex:1 1 100px}
 </style>
 <script id="henri-copy-tools-script">
 (()=>{
- 'use strict';
- function start(){
-  const root=document.getElementById('henri-guide');
-  if(!root||root.dataset.henriCopyInstalled)return;
-  root.dataset.henriCopyInstalled='1';
-  const messages=root.querySelector('.hg-messages');
-  if(!messages)return;
-  function installButtons(){
-   messages.querySelectorAll('.hg-bubble.bot').forEach(bubble=>{
-    if(bubble.querySelector('.henri-copy-answer'))return;
-    const button=document.createElement('button');
-    button.type='button';button.className='henri-copy-answer';button.textContent='📋 Copiar respuesta';
-    button.addEventListener('click',async()=>{
-     const clone=bubble.cloneNode(true);
-     clone.querySelectorAll('.henri-copy-answer').forEach(x=>x.remove());
-     const value=(clone.innerText||clone.textContent||'').trim();
-     if(!value)return;
-     try{
-      if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(value);
-      else throw new Error('clipboard unavailable');
-      button.textContent='✓ Copiado';
-     }catch(e){
-      const selection=window.getSelection();const range=document.createRange();
-      range.selectNodeContents(bubble);selection.removeAllRanges();selection.addRange(range);
-      button.textContent='Seleccionado: pulsa Ctrl+C';
-     }
-     setTimeout(()=>{if(button.isConnected)button.textContent='📋 Copiar respuesta';},2200);
-    });
-    bubble.appendChild(button);
-   });
-  }
-  installButtons();
-  const observer=new MutationObserver(installButtons);
-  observer.observe(messages,{childList:true,subtree:false});
-  const input=root.querySelector('.hg-input');
-  if(input){
-   const paste=document.createElement('button');
-   paste.type='button';paste.className='henri-paste-question';paste.textContent='📋 Pegar';paste.title='Pegar texto del portapapeles';
-   paste.addEventListener('click',async()=>{
-    try{
-     if(!navigator.clipboard?.readText)throw new Error('not supported');
-     const text=await navigator.clipboard.readText();
-     if(text){
-      const from=input.selectionStart??input.value.length,to=input.selectionEnd??from;
-      input.setRangeText(text,from,to,'end');
-      input.dispatchEvent(new Event('input',{bubbles:true}));
-     }
-     input.focus();
-    }catch(e){input.focus();paste.title='Permite el portapapeles o usa Ctrl+V';paste.textContent='Usa Ctrl+V';setTimeout(()=>paste.textContent='📋 Pegar',2200);}
-   });
-   input.insertAdjacentElement('afterend',paste);
-  }
+'use strict';
+function start(){
+ const root=document.getElementById('henri-guide');
+ if(!root)return;
+ const messages=root.querySelector('#hg-messages,.hg-messages');
+ const form=root.querySelector('#hg-form,.hg-form');
+ const input=root.querySelector('#hg-input,.hg-input');
+ if(!messages||!form||!input)return;
+ async function copyText(text,button){
+  try{
+   if(navigator.clipboard && window.isSecureContext){await navigator.clipboard.writeText(text)}
+   else{
+    const temp=document.createElement('textarea');temp.value=text;temp.style.cssText='position:fixed;left:-9999px;top:0';document.body.appendChild(temp);temp.select();
+    const ok=document.execCommand('copy');temp.remove();if(!ok)throw Error('No se pudo copiar');
+   }
+   button.textContent='✓ Copiado';
+  }catch(err){button.textContent='Selecciona y usa Ctrl+C';}
+  setTimeout(()=>{if(button.isConnected)button.textContent='📋 Copiar';},2500);
  }
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+ function addCopyButtons(){
+  messages.querySelectorAll('.hg-bubble.bot').forEach(bubble=>{
+   if(bubble.querySelector('.henri-copy-answer'))return;
+   const button=document.createElement('button');button.type='button';button.className='henri-copy-answer';button.textContent='📋 Copiar';button.title='Copiar esta respuesta completa';
+   button.addEventListener('click',()=>{
+    const clone=bubble.cloneNode(true);
+    clone.querySelectorAll('.henri-copy-answer').forEach(x=>x.remove());
+    const text=(clone.innerText||clone.textContent||'').trim();
+    if(text)copyText(text,button);
+   });
+   bubble.appendChild(button);
+  });
+ }
+ // Barra fija: el usuario siempre ve Copiar aunque el mensaje cambie.
+ let copyLast=form.querySelector('.henri-copy-answer');
+ if(!copyLast){
+  copyLast=document.createElement('button');copyLast.type='button';copyLast.className='henri-copy-answer';copyLast.textContent='📋 Copiar';copyLast.title='Copiar la última respuesta de HENRI IA';
+  copyLast.style.marginTop='0';
+  copyLast.addEventListener('click',()=>{
+   const bubbles=[...messages.querySelectorAll('.hg-bubble.bot')];const last=bubbles[bubbles.length-1];
+   if(!last){copyLast.textContent='Sin respuesta';return;}
+   const clone=last.cloneNode(true);clone.querySelectorAll('.henri-copy-answer').forEach(x=>x.remove());
+   const text=(clone.innerText||clone.textContent||'').trim();if(text)copyText(text,copyLast);
+  });
+  form.insertBefore(copyLast,form.querySelector('.hg-send'));
+ }
+ if(!form.querySelector('.henri-paste-question')){
+  const paste=document.createElement('button');paste.type='button';paste.className='henri-paste-question';paste.textContent='📋 Pegar';paste.title='Pegar una pregunta (o usa Ctrl+V)';
+  paste.addEventListener('click',async()=>{
+   try{
+    if(!navigator.clipboard?.readText)throw Error('Portapapeles no disponible');
+    const text=await navigator.clipboard.readText();if(text){
+     const from=input.selectionStart??input.value.length,to=input.selectionEnd??from;
+     input.setRangeText(text,from,to,'end');input.dispatchEvent(new Event('input',{bubbles:true}));
+    }
+   }catch(e){paste.textContent='Usa Ctrl+V';setTimeout(()=>paste.textContent='📋 Pegar',2500)}
+   input.focus();
+  });
+  form.insertBefore(paste,form.querySelector('.hg-send'));
+ }
+ addCopyButtons();
+ new MutationObserver(addCopyButtons).observe(messages,{childList:true,subtree:true});
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
 </script>
 </body></html>
