@@ -1087,17 +1087,19 @@ form.addEventListener('submit',e=>{e.preventDefault();const q=input.value;if(!q.
   u.lang=lang==='zh-CN'?'zh-CN':lang;u.rate=.95;u.pitch=1.07;
   const voice=pickVoice(lang);if(voice)u.voice=voice;
   started=false;active=u;clearTimeout(watchdog);
-  u.onstart=()=>{started=true;panel.style.display='none';try{sessionStorage.setItem(key,'1')}catch(e){}};
+  u.onstart=()=>{started=true;label.textContent='🔊 HENRI IA está hablando';panel.style.display='flex';};
   u.onerror=()=>{if(!cancelled)show()};
-  u.onend=()=>{active=null};
+  u.onend=()=>{active=null;clearTimeout(watchdog);panel.style.display='none';try{sessionStorage.setItem(key,'1')}catch(e){}};
   try{synth.speak(u)}catch(e){show();return}
   // Algunos navegadores bloquean la voz automática sin informar un error.
-  watchdog=setTimeout(()=>{if(!started&&!cancelled){try{synth.cancel()}catch(e){}show()}},2200);
+  watchdog=setTimeout(()=>{if(!started&&!cancelled){try{synth.cancel()}catch(e){}show()}},4000);
  }
- play.addEventListener('click',()=>{cancelled=false;try{synth.cancel()}catch(e){}speak()});
+ play.addEventListener('click',()=>{cancelled=false;clearTimeout(watchdog);try{synth.cancel()}catch(e){}speak()});
  mute.addEventListener('click',()=>{cancelled=true;clearTimeout(watchdog);try{synth.cancel()}catch(e){}panel.style.display='none';try{sessionStorage.setItem(key,'1')}catch(e){}});
  try{if(sessionStorage.getItem(key)==='1')return}catch(e){}
- // Intento al abrir la página; si el navegador bloquea el audio, ofrece el botón.
+ // Botón visible desde el inicio: el audio automático no está garantizado por el navegador.
+ show();
+ // Intento al abrir la página; si el navegador bloquea el audio, permanece el botón.
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(speak,450),{once:true});
  else setTimeout(speak,450);
 })();
